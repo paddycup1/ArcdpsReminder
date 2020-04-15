@@ -1,0 +1,25 @@
+{
+  "name": "arcdpsreminder",
+  "version": "1.0.0",
+  "description": "A simple bot that remind you to update arcdps.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paddycup1/ArcdpsReminder"
+  },
+  "main": "out/index.js",
+  "scripts": {
+    "compile": "tsc  -p ./",
+    "watch": "tsc -watch -p ./",
+    "start": "node ./out/index.js"
+  },
+  "author": "Paddy",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@types/node": "^13.9.8",
+    "@types/ws": "^7.2.3",
+    "discord.js": "^12.1.1"
+  }
+}
