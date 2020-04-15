@@ -3,7 +3,7 @@
 A simple bot that remind you to update arcdps.
 
 Put a config.json in the project root folder:
-```json
+```jsonc
 {
   "CheckUpdateInterval": 3600000, //ms
   "DefaultNotifyMessage": "Arcdps just updated!!",
