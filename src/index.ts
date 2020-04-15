@@ -122,16 +122,47 @@ let gCommands: {
     },
     help: (msg: Discord.Message, arg: string) => {
       let mentionText = "@mention";
-      if (client.user && msg.guild) {
-        mentionText = `@${msg.guild.member(client.user.id)?.displayName}`;
+      if (client.user) {
+        if (msg.guild) {
+          mentionText = `@${msg.guild.member(client.user.id)?.displayName}`;
+        } else if (msg.channel.type == "dm") {
+          mentionText = `@${client.user.username}`;
+        }
       }
 
-      msg.reply(`\nAdd this channel to notify list: \`${mentionText} add\`\n` +
-        `Delete this channel from notify list: \`${mentionText} del\`\n` +
-        `Edit notify message: \`${mentionText} edit <message>\`\n` +
-        `Display help message: \`${mentionText} help\`\n` +
-        `Test message: \`${mentionText} test\`\n` +
-        `Show last check status: \`${mentionText} lastcheck\``);
+      msg.channel.send(new Discord.MessageEmbed(
+        {
+          title: "Fancy help message",
+          color: [255, 51, 51],
+          footer: { text: "View source: https://github.com/paddycup1/ArcdpsReminder" },
+          fields: [
+            {
+              name: `${mentionText} add`,
+              value: "Add this channel to notify list"
+            },
+            {
+              name: `${mentionText} del`,
+              value: "Delete this channel from notify list"
+            },
+            {
+              name: `${mentionText} edit <message>`,
+              value: "Edit notify message"
+            },
+            {
+              name: `${mentionText} help`,
+              value: "Display help message"
+            },
+            {
+              name: `${mentionText} test`,
+              value: "Test message"
+            },
+            {
+              name: `${mentionText} lastcheck`,
+              value: "Show last check status"
+            }
+          ]
+        }
+      ));
     },
     test: (msg: Discord.Message, arg: string) => {
       try {
@@ -221,17 +252,54 @@ let gCommands: {
     },
     helpadmin: (msg: Discord.Message, arg: string) => {
       let mentionText = "@mention";
-      if (client.user && msg.guild) {
-        mentionText = `@${msg.guild.member(client.user.id)?.displayName}`;
+      if (client.user) {
+        if (msg.guild) {
+          mentionText = `@${msg.guild.member(client.user.id)?.displayName}`;
+        } else if (msg.channel.type == "dm") {
+          mentionText = `@${client.user.username}`;
+        }
       }
-      msg.reply(`\nTest notify for all channel: \`${mentionText} testall\`\n` +
-        `Set debug level: \`${mentionText} setdebuglevel <DEBUG | VERBOSE | INFO | ERROR>\`\n` +
-        `Set check interval: \`${mentionText} setinterval <interval in ms>\`\n` +
-        `Set bot status: \`${mentionText} setstatus <status>\`\n` +
-        `Perform update check immediately: \`${mentionText} checknow\`\n` +
-        `Save config to file: \`${mentionText} saveconfig\`\n` +
-        `Dump config: \`${mentionText} printconfig\`\n` + 
-        `Display admin help message: \`${mentionText} helpadmin\``);
+
+      msg.channel.send(new Discord.MessageEmbed(
+        {
+          title: "Fancy Help Message for Admin",
+          color: [51, 51, 255],
+          fields: [
+            {
+              name: `${mentionText} testall`,
+              value: "Test notify for all channel"
+            },
+            {
+              name: `${mentionText} setdebuglevel <DEBUG | VERBOSE | INFO | ERROR>`,
+              value: "Set logging level"
+            },
+            {
+              name: `${mentionText} setinterval <interval in ms>`,
+              value: "Set check interval"
+            },
+            {
+              name: `${mentionText} setstatus <status>`,
+              value: "Set bot status"
+            },
+            {
+              name: `${mentionText} checknow`,
+              value: "Perform update check immediately"
+            },
+            {
+              name: `${mentionText} saveconfig`,
+              value: "Save config to file"
+            },
+            {
+              name: `${mentionText} printconfig`,
+              value: "Dump config"
+            },
+            {
+              name: `${mentionText} helpadmin`,
+              value: "Display admin help message"
+            }
+          ]
+        }
+      ));
     }
   }
 }
@@ -442,6 +510,7 @@ if (config == undefined) {
   client.login(gConfig.Token).then(() => {
     getArcdpsMd5().then(md5 => {
       gSavedMd5 = md5;
+      log("INFO", "First md5: " + gSavedMd5.toString().replace("\n", ""))
       gTimerId = initTimer(gConfig.CheckUpdateInterval);
     })
   });
