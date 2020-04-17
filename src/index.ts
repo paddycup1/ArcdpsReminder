@@ -21,7 +21,7 @@ const CONFIG_FILE = "config.json";
 const DEFAULT_NOTIFY_MESSAGE = "Arcdps just updated!!";
 const DEFAULT_CHECK_UPDATE_INTERVAL = 60 * 60 * 1000;
 const DEFAULT_STATUS_MESSAGE = "@mention help";
-const DEFAULT_DEBUG_LEVEL = DebugLevel.ERROR;
+const DEFAULT_DEBUG_LEVEL = DebugLevel.INFO;
 
 let gChannels: {
   [key: string]: ChannelData
