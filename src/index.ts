@@ -434,9 +434,9 @@ client.on('message', msg => {
     member = msg.guild.member(client.user.id)
   }
   if (!msg.author.bot && ((member && msg.mentions.has(member))) || msg.channel.type == "dm") {
-    let match = msg.content.match(/<@(?:&|!)?\d+>\s+(\w+)(?:\s+(\S.+))?/);
+    let match = msg.content.match(/<@(?:&|!)?\d+>\s+(\w+)(?:\s+(\S.+))?/s);
     if (!match && msg.channel.type == "dm") {
-      match = msg.content.match(/(\w+)(?:\s+(\S.+))?/);
+      match = msg.content.match(/(\w+)(?:\s+(\S.+))?/s);
     }
     if (match) {
       let command = match[1].toLowerCase();
