@@ -55,7 +55,7 @@ let gCommands: {
   generic: {
     add: (msg: Discord.Message, arg: string) => {
       if (gChannels[msg.channel.id]) {
-        msg.reply("This channel already added");
+        msg.reply("This channel already been added");
       } else {
         let channel = {
           message: gConfig.DefaultNotifyMessage,
@@ -132,17 +132,17 @@ let gCommands: {
 
       msg.channel.send(new Discord.MessageEmbed(
         {
-          title: "Fancy help message",
+          title: "Fancy Help Message",
           color: [255, 51, 51],
           footer: { text: "View source: https://github.com/paddycup1/ArcdpsReminder" },
           fields: [
             {
               name: `${mentionText} add`,
-              value: "Add this channel to notify list"
+              value: "Add this channel to the notify list"
             },
             {
               name: `${mentionText} del`,
-              value: "Delete this channel from notify list"
+              value: "Delete this channel from the notify list"
             },
             {
               name: `${mentionText} edit <message>`,
