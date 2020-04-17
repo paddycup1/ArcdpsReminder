@@ -1,6 +1,7 @@
 import * as Discord from "discord.js"
 import * as fs from "fs"
 import * as https from "https"
+import * as jsonc from "comment-json"
 
 enum DebugLevel {
   ERROR = 0,
@@ -234,7 +235,7 @@ let gCommands: {
       msg.reply("Performed arcdps check.")
     },
     saveconfig: (msg: Discord.Message, arg: string) => {
-      let data = JSON.stringify(gConfig, null, 2);
+      let data = jsonc.stringify(gConfig, null, 2);
       try {
         fs.writeFileSync("config.json", data);
         log("INFO", `Saved config to file, requested by ${msg.author.tag} <@!${msg.author.id}> in channel ${msg.channel.id}`)
@@ -390,7 +391,7 @@ function sendNotify(args?: { id?: string, test?: boolean }) {
 
 function saveChannelFile(): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
-    fs.writeFile(CHANNEL_FILE, JSON.stringify(gChannels), err => {
+    fs.writeFile(CHANNEL_FILE, jsonc.stringify(gChannels), err => {
       if (err) {
         reject(err);
       } else {
@@ -463,10 +464,10 @@ client.on('message', msg => {
 
 let config;
 if (fs.existsSync(CHANNEL_FILE)) {
-  gChannels = JSON.parse(fs.readFileSync(CHANNEL_FILE).toString().replace(/\/\/.*/g, "").replace(/\/\*.*\*\//gs, ""));
+  gChannels = jsonc.parse(fs.readFileSync(CHANNEL_FILE).toString());
 }
 if (fs.existsSync(CONFIG_FILE)) {
-  config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString().replace(/\/\/.*/g, "").replace(/\/\*.*\*\//gs, ""));
+  config = jsonc.parse(fs.readFileSync(CONFIG_FILE).toString());
 }
 
 if (config == undefined) {
@@ -474,18 +475,7 @@ if (config == undefined) {
 } else if (!config.Token) {
   log("ERROR", "Please provide \"Token\" property in config.json");
 } else {
-  if (config.Token) {
-    gConfig.Token = config.Token;
-  }
-  if (config.CheckUpdateInterval) {
-    gConfig.CheckUpdateInterval = config.CheckUpdateInterval;
-  }
-  if (config.DefaultNotifyMessage) {
-    gConfig.DefaultNotifyMessage = config.DefaultNotifyMessage;
-  }
-  if (config.BotStatus) {
-    gConfig.BotStatus = config.BotStatus;
-  }
+  gConfig = Object.assign(gConfig, config);
   if (config.DebugLevel) {
     if (config.DebugLevel == "DEBUG" || config.DebugLevel == "VERBOSE" || config.DebugLevel == "INFO" || config.DebugLevel == "ERROR") {
       gConfig.DebugLevel = config.DebugLevel;

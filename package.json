@@ -20,6 +20,7 @@
   "dependencies": {
     "@types/node": "^13.9.8",
     "@types/ws": "^7.2.3",
+    "comment-json": "^3.0.2",
     "discord.js": "^12.1.1"
   }
 }
