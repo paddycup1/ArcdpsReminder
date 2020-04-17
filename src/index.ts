@@ -19,7 +19,7 @@ const client = new Discord.Client();
 const CHANNEL_FILE = "channels.json";
 const CONFIG_FILE = "config.json";
 const DEFAULT_NOTIFY_MESSAGE = "Arcdps just updated!!";
-const DEFAULT_CHECK_UPDATE_INTERVAL = 60 * 60 * 1000;
+const DEFAULT_CHECK_UPDATE_INTERVAL = "1h";
 const DEFAULT_STATUS_MESSAGE = "@mention help";
 const DEFAULT_DEBUG_LEVEL = DebugLevel.INFO;
 
@@ -29,7 +29,7 @@ let gChannels: {
 
 let gConfig: {
   Token?: string,
-  CheckUpdateInterval: number,
+  CheckUpdateInterval: string,
   DefaultNotifyMessage: string,
   BotStatus: string,
   DebugLevel: string,
@@ -208,11 +208,11 @@ let gCommands: {
     },
     setinterval: (msg: Discord.Message, arg: string) => {
       try {
-        gConfig.CheckUpdateInterval = parseInt(arg);
+        gConfig.CheckUpdateInterval = arg;
         clearInterval(gTimerId);
         gTimerId = initTimer(gConfig.CheckUpdateInterval);
         log("INFO", "Set check interval to " + gConfig.CheckUpdateInterval + `, requested by ${msg.author.tag} <@!${msg.author.id}> in channel ${msg.channel.id}`);
-        msg.reply("Set check interval to " + gConfig.CheckUpdateInterval)
+        msg.reply(`Set check interval to ${parseTime(gConfig.CheckUpdateInterval)} ms`);
         checkUpdate();
       } catch (err) {
         msg.reply(err);
@@ -325,6 +325,41 @@ function log(level: "INFO" | "ERROR" | "VERBOSE" | "DEBUG", message: string) {
   }
 }
 
+function parseTime(str: string): number {
+  const SEC_IN_MS = 1000;
+  const MIN_IN_MS = SEC_IN_MS * 60;
+  const HOUR_IN_MS = MIN_IN_MS * 60;
+  const DAY_IN_MS = HOUR_IN_MS * 24;
+  const WEEK_IN_MS = DAY_IN_MS * 7;
+  let reg: RegExp = /([\d\.]+)(s|m|h|d|w)?/gi;
+  let time: number = 0;
+  let match: RegExpExecArray | null;
+  while (match = reg.exec(str)) {
+    if (match[2]) {
+      switch (match[2].toLowerCase()) {
+        case "s":
+          time += parseFloat(match[1]) * SEC_IN_MS;
+          break;
+        case "m":
+          time += parseFloat(match[1]) * MIN_IN_MS;
+          break;
+        case "h":
+          time += parseFloat(match[1]) * HOUR_IN_MS;
+          break;
+        case "d":
+          time += parseFloat(match[1]) * DAY_IN_MS;
+          break;
+        case "w":
+          time += parseFloat(match[1]) * WEEK_IN_MS;
+          break;
+      }
+    } else {
+      time += parseFloat(match[1]);
+    }
+  }
+  return time;
+}
+
 function getArcdpsMd5(): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
     let request = https.request("https://www.deltaconnected.com/arcdps/x64/d3d9.dll.md5sum", res => {
@@ -416,8 +451,10 @@ async function checkUpdate() {
   });
 }
 
-function initTimer(interval: number): NodeJS.Timeout {
-  return setInterval(checkUpdate, interval);
+function initTimer(interval: string): NodeJS.Timeout {
+  let intervalNum = parseTime(interval);
+  log("VERBOSE", "Initial timer with interval: " + intervalNum);
+  return setInterval(checkUpdate, intervalNum);
 }
 
 function main() {
