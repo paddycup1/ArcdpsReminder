@@ -420,91 +420,96 @@ function initTimer(interval: number): NodeJS.Timeout {
   return setInterval(checkUpdate, interval);
 }
 
-client.on('ready', () => {
-  if (client.user) {
-    log("INFO", `Logged in as ${client.user.tag}!`);
-    client.user.setPresence({ activity: { type: "PLAYING", name: gConfig.BotStatus } });
-  }
-});
-
-client.on('message', msg => {
-  log("DEBUG", `Message from ${msg.channel.id}: ${msg.content}`);
-  let member: Discord.GuildMember | Discord.User | null = client.user as Discord.User;
-  if (msg.guild && client.user) {
-    member = msg.guild.member(client.user.id)
-  }
-  if (!msg.author.bot && ((member && msg.mentions.has(member))) || msg.channel.type == "dm") {
-    let match = msg.content.match(/<@(?:&|!)?\d+>\s+(\w+)(?:\s+(\S.+))?/s);
-    if (!match && msg.channel.type == "dm") {
-      match = msg.content.match(/(\w+)(?:\s+(\S.+))?/s);
+function main() {
+  let config;
+  client.on('ready', () => {
+    if (client.user) {
+      log("INFO", `Logged in as ${client.user.tag}!`);
+      client.user.setPresence({ activity: { type: "PLAYING", name: gConfig.BotStatus } });
     }
-    if (match) {
-      let command = match[1].toLowerCase();
-      let arg = match[2] ? match[2] : "";
-      let executed: boolean = false;
-      for (let cmd in gCommands.generic) {
-        if (cmd.toLowerCase() == command) {
-          gCommands.generic[cmd](msg, arg);
-          executed = true;
-          break;
-        }
+  });
+
+  client.on('message', msg => {
+    log("DEBUG", `Message from ${msg.channel.id}: ${msg.content}`);
+    let member: Discord.GuildMember | Discord.User | null = client.user as Discord.User;
+    if (msg.guild && client.user) {
+      member = msg.guild.member(client.user.id)
+    }
+    if (!msg.author.bot && ((member && msg.mentions.has(member))) || msg.channel.type == "dm") {
+      let match = msg.content.match(/<@(?:&|!)?\d+>\s+(\w+)(?:\s+(\S.+))?/s);
+      if (!match && msg.channel.type == "dm") {
+        match = msg.content.match(/(\w+)(?:\s+(\S.+))?/s);
       }
-      if (!executed && gConfig != null && gConfig.Admins != null && gConfig.Admins.indexOf(msg.author.id) != -1) {
-        for (let cmd in gCommands.admin) {
+      if (match) {
+        let command = match[1].toLowerCase();
+        let arg = match[2] ? match[2] : "";
+        let executed: boolean = false;
+        for (let cmd in gCommands.generic) {
           if (cmd.toLowerCase() == command) {
-            gCommands.admin[cmd](msg, arg);
+            gCommands.generic[cmd](msg, arg);
             executed = true;
             break;
           }
         }
+        if (!executed && gConfig != null && gConfig.Admins != null && gConfig.Admins.indexOf(msg.author.id) != -1) {
+          for (let cmd in gCommands.admin) {
+            if (cmd.toLowerCase() == command) {
+              gCommands.admin[cmd](msg, arg);
+              executed = true;
+              break;
+            }
+          }
+        }
       }
     }
-  }
-});
-
-let config;
-if (fs.existsSync(CHANNEL_FILE)) {
-  gChannels = jsonc.parse(fs.readFileSync(CHANNEL_FILE).toString());
-}
-if (fs.existsSync(CONFIG_FILE)) {
-  config = jsonc.parse(fs.readFileSync(CONFIG_FILE).toString());
-}
-
-if (config == undefined) {
-  log("ERROR", "Please create config.json in this folder!!");
-} else if (!config.Token) {
-  log("ERROR", "Please provide \"Token\" property in config.json");
-} else {
-  gConfig = Object.assign(gConfig, config);
-  if (config.DebugLevel) {
-    if (config.DebugLevel == "DEBUG" || config.DebugLevel == "VERBOSE" || config.DebugLevel == "INFO" || config.DebugLevel == "ERROR") {
-      gConfig.DebugLevel = config.DebugLevel;
-      switch (gConfig.DebugLevel) {
-        case "DEBUG":
-          gDebugLevel = DebugLevel.DEBUG;
-          break;
-        case "VERBOSE":
-          gDebugLevel = DebugLevel.VERBOSE;
-          break;
-        case "INFO":
-          gDebugLevel = DebugLevel.INFO;
-          break;
-        case "ERROR":
-          gDebugLevel = DebugLevel.ERROR;
-          break;
-      }
-    } else {
-      log("ERROR", "The value of the \"DebugLevel\" property in config.json must be one of following: \"DEBUG\", \"VERBOSE\", \"INFO\", \"ERROR\"");
-    }
-  }
-  if (config.Admins) {
-    gConfig.Admins = config.Admins;
-  }
-  client.login(gConfig.Token).then(() => {
-    getArcdpsMd5().then(md5 => {
-      gSavedMd5 = md5;
-      log("INFO", "First md5: " + gSavedMd5.toString().replace("\n", ""))
-      gTimerId = initTimer(gConfig.CheckUpdateInterval);
-    })
   });
+
+
+  if (fs.existsSync(CHANNEL_FILE)) {
+    gChannels = jsonc.parse(fs.readFileSync(CHANNEL_FILE).toString());
+  }
+  if (fs.existsSync(CONFIG_FILE)) {
+    config = jsonc.parse(fs.readFileSync(CONFIG_FILE).toString());
+  }
+
+  if (config == undefined) {
+    log("ERROR", "Please create config.json in this folder!!");
+  } else if (!config.Token) {
+    log("ERROR", "Please provide \"Token\" property in config.json");
+  } else {
+    gConfig = Object.assign(gConfig, config);
+    if (config.DebugLevel) {
+      if (config.DebugLevel == "DEBUG" || config.DebugLevel == "VERBOSE" || config.DebugLevel == "INFO" || config.DebugLevel == "ERROR") {
+        gConfig.DebugLevel = config.DebugLevel;
+        switch (gConfig.DebugLevel) {
+          case "DEBUG":
+            gDebugLevel = DebugLevel.DEBUG;
+            break;
+          case "VERBOSE":
+            gDebugLevel = DebugLevel.VERBOSE;
+            break;
+          case "INFO":
+            gDebugLevel = DebugLevel.INFO;
+            break;
+          case "ERROR":
+            gDebugLevel = DebugLevel.ERROR;
+            break;
+        }
+      } else {
+        log("ERROR", "The value of the \"DebugLevel\" property in config.json must be one of following: \"DEBUG\", \"VERBOSE\", \"INFO\", \"ERROR\"");
+      }
+    }
+    if (config.Admins) {
+      gConfig.Admins = config.Admins;
+    }
+    client.login(gConfig.Token).then(() => {
+      getArcdpsMd5().then(md5 => {
+        gSavedMd5 = md5;
+        log("INFO", "First md5: " + gSavedMd5.toString().replace("\n", ""))
+        gTimerId = initTimer(gConfig.CheckUpdateInterval);
+      })
+    });
+  }
 }
+
+main()
