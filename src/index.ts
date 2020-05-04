@@ -18,6 +18,7 @@ interface ChannelData {
 const client = new Discord.Client();
 const CHANNEL_FILE = "channels.json";
 const CONFIG_FILE = "config.json";
+const MD5_SAVE_FILE = "save.md5"
 const DEFAULT_NOTIFY_MESSAGE = "Arcdps just updated!!";
 const DEFAULT_CHECK_UPDATE_INTERVAL = "1h";
 const DEFAULT_STATUS_MESSAGE = "@mention help";
@@ -445,6 +446,11 @@ async function checkUpdate() {
       log("INFO", `New md5: ${newMd5.toString().replace("\n", "")}`);
       gSavedMd5 = newMd5;
       sendNotify();
+      fs.writeFile(MD5_SAVE_FILE, newMd5, err => {
+        if (err) {
+          log("ERROR", "Save md5 error: " + err);
+        }
+      });
     } else {
       log("VERBOSE", "Arcdps has no update");
     }
@@ -540,11 +546,27 @@ function main() {
       gConfig.Admins = config.Admins;
     }
     client.login(gConfig.Token).then(() => {
-      getArcdpsMd5().then(md5 => {
-        gSavedMd5 = md5;
-        log("INFO", "First md5: " + gSavedMd5.toString().replace("\n", ""))
-        gTimerId = initTimer(gConfig.CheckUpdateInterval);
-      })
+      fs.readFile(MD5_SAVE_FILE, (err, data) => {
+        if (err) {
+          log("ERROR", "Open saved md5 file error: " + err);
+          log("ERROR", "Getting newest md5");
+          getArcdpsMd5().then(newMd5 => {
+            gSavedMd5 = newMd5;
+            fs.writeFile(MD5_SAVE_FILE, newMd5, err => {
+              if (err) {
+                log("ERROR", "Save md5 error: " + err);
+              }
+            });
+            checkUpdate();
+            gTimerId = initTimer(gConfig.CheckUpdateInterval);
+          });
+        } else {
+          gSavedMd5 = data;
+          log("INFO", "md5 from saved file: " + gSavedMd5.toString().replace("\n", ""))
+          checkUpdate();
+          gTimerId = initTimer(gConfig.CheckUpdateInterval);
+        }
+      });
     });
   }
 }
