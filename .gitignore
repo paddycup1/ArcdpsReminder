@@ -3,3 +3,4 @@
 /config.json
 /channels.json
 /save.md5
+*.backup

@@ -28,6 +28,42 @@
         "kind": "test",
         "isDefault": true
       }
+    },
+    {
+      "label": "Build and run a new container",
+      "type": "shell",
+      "command": "docker build -t arcbot:${input:imageTag} . && docker run -d --name ${input:containerName} --restart unless-stopped arcbot:${input:imageTag}"
+    },
+    {
+      "label": "Stop and delete the old container",
+      "type": "shell",
+      "command": "docker stop ${input:containerName} && docker container rm ${input:containerName} && docker container rmi arcbot:${input:imageTag}"
+    },
+    {
+      "label": "Copy save files form container",
+      "type": "shell",
+      "command":[
+        "mv channels.json channels.json.backup &&",
+        "mv config.json config.json.backup &&",
+        "mv save.md5 save.md5.backup &&",
+        "docker cp ${input:containerName}:/usr/src/app/channels.json channels.json &&",
+        "docker cp ${input:containerName}:/usr/src/app/config.json config.json &&",
+        "docker cp ${input:containerName}:/usr/src/app/save.md5 save.md5"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "imageTag",
+      "type": "promptString",
+      "description": "The tag name for docker image",
+      "default": "latest"
+    },
+    {
+      "id": "containerName",
+      "type": "promptString",
+      "default": "arcbot",
+      "description": "The name of docker container"
     }
   ]
 }
