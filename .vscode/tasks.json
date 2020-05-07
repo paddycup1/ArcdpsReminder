@@ -37,18 +37,20 @@
     {
       "label": "Stop and delete the old container",
       "type": "shell",
-      "command": "docker stop ${input:containerName} && docker container rm ${input:containerName} && docker container rmi arcbot:${input:imageTag}"
+      "command": "docker stop ${input:containerName} && docker container rm ${input:containerName}"
     },
     {
       "label": "Copy save files form container",
       "type": "shell",
       "command":[
-        "mv channels.json channels.json.backup &&",
-        "mv config.json config.json.backup &&",
-        "mv save.md5 save.md5.backup &&",
-        "docker cp ${input:containerName}:/usr/src/app/channels.json channels.json &&",
-        "docker cp ${input:containerName}:/usr/src/app/config.json config.json &&",
-        "docker cp ${input:containerName}:/usr/src/app/save.md5 save.md5"
+        "if [ -f \"channels.json\" ]; then mv channels.json channels.json.backup; fi ;",
+        "if [ -f \"config.json\" ]; then mv config.json config.json.backup; fi ;",
+        "if [ -f \"webhooks.json\" ]; then mv webhooks.json webhooks.json.backup; fi ;",
+        "if [ -f \"save.json\" ]; then mv save.md5 save.md5.backup; fi ;",
+        "docker cp ${input:containerName}:/usr/src/app/save.md5 save.md5 ;",
+        "docker cp ${input:containerName}:/usr/src/app/channels.json channels.json ;",
+        "docker cp ${input:containerName}:/usr/src/app/config.json config.json ;",
+        "docker cp ${input:containerName}:/usr/src/app/webhooks.json webhooks.json"
       ]
     }
   ],

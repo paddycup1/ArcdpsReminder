@@ -15,8 +15,14 @@ interface ChannelData {
   dmUserId: string
 }
 
+interface WebhookData {
+  message: string,
+  token: string
+}
+
 const client = new Discord.Client();
 const CHANNEL_FILE = "channels.json";
+const WEBHOOK_FILE = "webhooks.json";
 const CONFIG_FILE = "config.json";
 const MD5_SAVE_FILE = "save.md5"
 const DEFAULT_NOTIFY_MESSAGE = "Arcdps just updated!!";
@@ -26,6 +32,10 @@ const DEFAULT_DEBUG_LEVEL = DebugLevel.INFO;
 
 let gChannels: {
   [key: string]: ChannelData
+} = {};
+
+let gWebhooks: {
+  [key: string]: WebhookData
 } = {};
 
 let gConfig: {
@@ -134,12 +144,12 @@ let gCommands: {
 
       msg.channel.send(new Discord.MessageEmbed(
         {
-          title: "Fancy Help Message",
+          title: "A Fancy Sweet Help Message",
           color: [255, 51, 51],
           footer: { text: "View source: https://github.com/paddycup1/ArcdpsReminder" },
           fields: [
             {
-              name: `${mentionText} add`,
+              name: `${mentionText} add [message]`,
               value: "Add this channel to the notify list"
             },
             {
@@ -161,6 +171,22 @@ let gCommands: {
             {
               name: `${mentionText} lastcheck`,
               value: "Show last check status"
+            },
+            {
+              name: `${mentionText} addwh <webhook url> [message]`,
+              value: "Add the webhook to the notify list"
+            },
+            {
+              name: `${mentionText} delwh <webhook url>`,
+              value: "Delete the webhook from the notify list"
+            },
+            {
+              name: `${mentionText} editwh <webhook url> <message>`,
+              value: "Edit notify message for the webhook"
+            },
+            {
+              name: `${mentionText} testwh <webhook url>`,
+              value: "Test webhook message"
             }
           ]
         }
@@ -168,19 +194,119 @@ let gCommands: {
     },
     test: (msg: Discord.Message, arg: string) => {
       try {
-        sendNotify({ id: msg.channel.id, test: true });
+        sendChannelNotify({ id: msg.channel.id, test: true });
       } catch (err) {
         msg.reply(err);
       }
     },
     lastcheck: (msg: Discord.Message, arg: string) => {
       msg.reply(`Current md5: \`${gSavedMd5.toString().replace("\n", "")}\` last checked at ${gCheckDate.toUTCString()}`);
+    },
+    addwh: (msg: Discord.Message, arg: string) => {
+      let match: RegExpMatchArray | null;
+      let webhookId = "";
+
+      if (arg == null || (match = arg.match(/https:\/\/discordapp\.com\/api\/webhooks\/(\d+)\/([\w\-]+)(?:\s+(\S.+))?/s)) == null) {
+        msg.reply("Usage: addwh <WebHook url> [notify content]");
+        return;
+      }
+      webhookId = match[1];
+      let webhook: WebhookData = {
+        message: gConfig.DefaultNotifyMessage,
+        token: match[2]
+      }
+      if (match[3]) {
+        webhook.message = match[3];
+      }
+
+      if (webhookId == "" || gWebhooks[webhookId] != null) {
+        msg.reply("This webhook already been added.");
+        return;
+      }
+
+      gWebhooks[webhookId] = webhook;
+      saveWebhookFile().then(success => {
+        if (success) {
+          msg.reply("Added the webhook to the webhook list");
+          log("INFO", `Added webhook to list: ${webhookId} message: ${webhook.message}`)
+        }
+      }).catch(err => {
+        msg.reply("Save file ERROR, please contact the bot manager");
+        log("ERROR", `Save file ERROR: ${err}`)
+      });
+    },
+    delwh: (msg: Discord.Message, arg: string) => {
+      let match: RegExpMatchArray | null;
+      let webhookId = "";
+      if (arg == null || (match = arg.match(/https:\/\/discordapp\.com\/api\/webhooks\/(\d+)\/([\w\-]+)/)) == null) {
+        msg.reply("Usage: delwh <WebHook url>");
+        return;
+      }
+      webhookId = match[1];
+      if (gWebhooks[webhookId]) {
+        delete gWebhooks[webhookId];
+        if (!gWebhooks[webhookId]) {
+          saveWebhookFile().then(success => {
+            if (success) {
+              msg.reply("Delete the webhook from the list success");
+              log("INFO", `Deleted webhook: ${webhookId}`)
+            }
+          }).catch(err => {
+            msg.reply("Save file ERROR, please contact the bot manager");
+            log("ERROR", `Save file ERROR: ${err}`)
+          });
+        }
+      } else {
+        msg.reply(`The webhook doesn't exist in the list`);
+        log("ERROR", `Trying to delete unexist webhook: ${webhookId}`)
+      }
+    },
+    editwh: (msg: Discord.Message, arg: string) => {
+      let match: RegExpMatchArray | null;
+      let webhookId = "";
+
+      if (arg == null || (match = arg.match(/https:\/\/discordapp\.com\/api\/webhooks\/(\d+)\/([\w\-]+)\s+(\S.+)/s)) == null) {
+        msg.reply("Usage: editwh <WebHook url> <notify content>");
+        return;
+      }
+
+      webhookId = match[1];
+      if (gWebhooks[webhookId]) {
+        gWebhooks[webhookId].message = match[3];
+        saveChannelFile().then(success => {
+          if (success) {
+            msg.reply("Update message in the list success");
+            log("INFO", `Updated message in the list: ${webhookId} to ${gWebhooks[webhookId].message}`)
+          }
+        }).catch(err => {
+          msg.reply("Save file ERROR, please contact the bot manager");
+          log("ERROR", `Save file ERROR: ${err}`)
+        });
+      } else {
+        msg.reply(`The webhook doesn't exist in the list`);
+        log("ERROR", `Trying to edit message for unexist webhook: ${webhookId}`)
+      }
+    },
+    testwh: (msg: Discord.Message, arg: string) => {
+      let match: RegExpMatchArray | null;
+      let webhookId = "";
+      if (arg == null || (match = arg.match(/https:\/\/discordapp\.com\/api\/webhooks\/(\d+)\/([\w\-]+)/)) == null) {
+        msg.reply("Usage: testwh <WebHook url>");
+        return;
+      }
+      webhookId = match[1];
+      if (gWebhooks[webhookId]) {
+        sendWebhookNotify({ id: webhookId, test: true });
+      } else {
+        msg.reply(`The webhook doesn't exist in the list`);
+        log("ERROR", `Trying to delete unexist webhook: ${webhookId}`)
+      }
     }
   },
   admin: {
     testall: (msg: Discord.Message, arg: string) => {
       log("INFO", `Test notify, requested by ${msg.author.tag} <@!${msg.author.id}> in channel ${msg.channel.id}`);
-      sendNotify({ test: true });
+      sendNotify(true);
     },
     setdebuglevel: (msg: Discord.Message, arg: string) => {
       if (arg.trim().toLowerCase() == "debug") {
@@ -264,7 +390,7 @@ let gCommands: {
 
       msg.channel.send(new Discord.MessageEmbed(
         {
-          title: "Fancy Help Message for Admin",
+          title: "A Fancy Help Message for Admin",
           color: [51, 51, 255],
           fields: [
             {
@@ -376,7 +502,7 @@ function getArcdpsMd5(): Promise<Buffer> {
   });
 }
 
-function sendNotify(args?: { id?: string, test?: boolean }) {
+function sendChannelNotify(args?: { id?: string, test?: boolean }) {
   let targetChannels: { [key: string]: ChannelData } = gChannels;
 
   if (args?.id != null) {
@@ -425,9 +551,45 @@ function sendNotify(args?: { id?: string, test?: boolean }) {
   }
 }
 
+function sendWebhookNotify(args?: { id?: string, test?: boolean }) {
+  let targetWebhooks: { [key: string]: WebhookData } = gWebhooks;
+
+  if (args?.id != null) {
+    if (gWebhooks[args.id] == null) {
+      log("ERROR", "Trying to notify unregistered channel: " + args.id);
+      throw new Error("Trying to notify unregistered channel: " + args.id);
+    }
+    targetWebhooks = { [args?.id]: gWebhooks[args.id] };
+  }
+  for (let webhookId in targetWebhooks) {
+    let webHookClient = new Discord.WebhookClient(webhookId, targetWebhooks[webhookId].token);
+    if (args?.test) {
+      webHookClient.send("Sending a test message:");
+    }
+    webHookClient.send({ content: targetWebhooks[webhookId].message });
+  }
+}
+
+function sendNotify(test?: boolean) {
+  sendChannelNotify({ test: test });
+  sendWebhookNotify({ test: test });
+}
+
 function saveChannelFile(): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
     fs.writeFile(CHANNEL_FILE, jsonc.stringify(gChannels), err => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(true);
+      }
+    });
+  });
+}
+
+function saveWebhookFile(): Promise<boolean> {
+  return new Promise<boolean>((resolve, reject) => {
+    fs.writeFile(WEBHOOK_FILE, jsonc.stringify(gWebhooks), err => {
       if (err) {
         reject(err);
       } else {
@@ -510,6 +672,9 @@ function main() {
 
   if (fs.existsSync(CHANNEL_FILE)) {
     gChannels = jsonc.parse(fs.readFileSync(CHANNEL_FILE).toString());
+  }
+  if (fs.existsSync(WEBHOOK_FILE)) {
+    gWebhooks = jsonc.parse(fs.readFileSync(WEBHOOK_FILE).toString());
   }
   if (fs.existsSync(CONFIG_FILE)) {
     config = jsonc.parse(fs.readFileSync(CONFIG_FILE).toString());

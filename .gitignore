@@ -2,5 +2,6 @@
 /out
 /config.json
 /channels.json
+/webhooks.json
 /save.md5
 *.backup
