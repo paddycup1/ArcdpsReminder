@@ -88,7 +88,7 @@ let gCommands: {
           }
         }).catch(err => {
           msg.reply("Save file ERROR, please contact the bot manager");
-          log("ERROR", `Save file ERROR: ${err}`)
+          log("ERROR", `Save file ERROR: ${err.toString()}`)
         });
       }
     },
@@ -103,7 +103,7 @@ let gCommands: {
             }
           }).catch(err => {
             msg.reply("Save file ERROR, please contact the bot manager");
-            log("ERROR", `Save file ERROR: ${err}`)
+            log("ERROR", `Save file ERROR: ${err.toString()}`)
           });
         }
       } else {
@@ -122,7 +122,7 @@ let gCommands: {
             }
           }).catch(err => {
             msg.reply("Save file ERROR, please contact the bot manager");
-            log("ERROR", `Save file ERROR: ${err}`)
+            log("ERROR", `Save file ERROR: ${err.toString()}`)
           });
         } else {
           msg.reply("Please provide message text.");
@@ -196,7 +196,7 @@ let gCommands: {
       try {
         sendChannelNotify({ id: msg.channel.id, test: true });
       } catch (err) {
-        msg.reply(err);
+        msg.reply(err.toString());
       }
     },
     lastcheck: (msg: Discord.Message, arg: string) => {
@@ -232,7 +232,7 @@ let gCommands: {
         }
       }).catch(err => {
         msg.reply("Save file ERROR, please contact the bot manager");
-        log("ERROR", `Save file ERROR: ${err}`)
+        log("ERROR", `Save file ERROR: ${err.toString()}`)
       });
     },
     delwh: (msg: Discord.Message, arg: string) => {
@@ -253,7 +253,7 @@ let gCommands: {
             }
           }).catch(err => {
             msg.reply("Save file ERROR, please contact the bot manager");
-            log("ERROR", `Save file ERROR: ${err}`)
+            log("ERROR", `Save file ERROR: ${err.toString()}`)
           });
         }
       } else {
@@ -280,7 +280,7 @@ let gCommands: {
           }
         }).catch(err => {
           msg.reply("Save file ERROR, please contact the bot manager");
-          log("ERROR", `Save file ERROR: ${err}`)
+          log("ERROR", `Save file ERROR: ${err.toString()}`)
         });
       } else {
         msg.reply(`The webhook doesn't exist in the list`);
@@ -304,10 +304,6 @@ let gCommands: {
     }
   },
   admin: {
-    testall: (msg: Discord.Message, arg: string) => {
-      log("INFO", `Test notify, requested by ${msg.author.tag} <@!${msg.author.id}> in channel ${msg.channel.id}`);
-      sendNotify(true);
-    },
     setdebuglevel: (msg: Discord.Message, arg: string) => {
       if (arg.trim().toLowerCase() == "debug") {
         log("INFO", `Set debug level to DEBUG, requested by ${msg.author.tag} <@!${msg.author.id}> in channel ${msg.channel.id}`);
@@ -342,7 +338,7 @@ let gCommands: {
         msg.reply(`Set check interval to ${parseTime(gConfig.CheckUpdateInterval)} ms`);
         checkUpdate();
       } catch (err) {
-        msg.reply(err);
+        msg.reply(err.toString());
       }
     },
     setstatus: (msg: Discord.Message, arg: string) => {
@@ -352,7 +348,7 @@ let gCommands: {
           log("INFO", "Set bot status to " + gConfig.BotStatus + ` requested by ${msg.author.tag} <@!${msg.author.id}> in channel ${msg.channel.id}`);
           msg.reply("Set bot status to " + gConfig.BotStatus);
         }).catch(err => {
-          msg.reply(err);
+          msg.reply(err.toString());
         });
       }
     },
@@ -368,8 +364,8 @@ let gCommands: {
         log("INFO", `Saved config to file, requested by ${msg.author.tag} <@!${msg.author.id}> in channel ${msg.channel.id}`)
         msg.reply("Config saved successfuly.")
       } catch (err) {
-        log("ERROR", err);
-        msg.reply(err);
+        log("ERROR", err.toString());
+        msg.reply(err.toString());
       }
     },
     printconfig: (msg: Discord.Message, arg: string) => {
@@ -393,10 +389,6 @@ let gCommands: {
           title: "A Fancy Help Message for Admin",
           color: [51, 51, 255],
           fields: [
-            {
-              name: `${mentionText} testall`,
-              value: "Test notify for all channel"
-            },
             {
               name: `${mentionText} setdebuglevel <DEBUG | VERBOSE | INFO | ERROR>`,
               value: "Set logging level"
@@ -570,16 +562,16 @@ function sendWebhookNotify(args?: { id?: string, test?: boolean }) {
   }
 }
 
-function sendNotify(test?: boolean) {
-  sendChannelNotify({ test: test });
-  sendWebhookNotify({ test: test });
+function sendNotify(args?: { test?: boolean }) {
+  sendChannelNotify(args);
+  sendWebhookNotify(args);
 }
 
 function saveChannelFile(): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
     fs.writeFile(CHANNEL_FILE, jsonc.stringify(gChannels), err => {
       if (err) {
-        reject(err);
+        reject(err.toString());
       } else {
         resolve(true);
       }
@@ -591,7 +583,7 @@ function saveWebhookFile(): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
     fs.writeFile(WEBHOOK_FILE, jsonc.stringify(gWebhooks), err => {
       if (err) {
-        reject(err);
+        reject(err.toString());
       } else {
         resolve(true);
       }
@@ -610,7 +602,7 @@ async function checkUpdate() {
       sendNotify();
       fs.writeFile(MD5_SAVE_FILE, newMd5, err => {
         if (err) {
-          log("ERROR", "Save md5 error: " + err);
+          log("ERROR", "Save md5 error: " + err.toString());
         }
       });
     } else {
@@ -713,13 +705,13 @@ function main() {
     client.login(gConfig.Token).then(() => {
       fs.readFile(MD5_SAVE_FILE, (err, data) => {
         if (err) {
-          log("ERROR", "Open saved md5 file error: " + err);
+          log("ERROR", "Open saved md5 file error: " + err.toString());
           log("ERROR", "Getting newest md5");
           getArcdpsMd5().then(newMd5 => {
             gSavedMd5 = newMd5;
             fs.writeFile(MD5_SAVE_FILE, newMd5, err => {
               if (err) {
-                log("ERROR", "Save md5 error: " + err);
+                log("ERROR", "Save md5 error: " + err.toString());
               }
             });
             checkUpdate();
